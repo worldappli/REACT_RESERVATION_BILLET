@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import BilletFormModal from "./BilletFormModal";
+import api from "../services/api";
+import { Modal, Button, Form } from "react-bootstrap";
+import HoraireFormModal from "./HoraireFormModal";
+
 
 const billets = [
     {
@@ -20,6 +25,12 @@ const billets = [
 
 export default function HomeCompagnie() {
     const [userInfo, setUserInfo] = useState(null);
+    const [showModal, setShowModal] = useState(false);
+    const [showHoraireModal, setShowHoraireModal] = useState(false);
+    const [transports, setTransports] = useState([]);
+    const [gare, setGare] = useState([]);
+    const [trajets, setTrajets] = useState([]);
+    const [horaires, setHoraires] = useState([]); // <-- AJOUT ICI
 
     useEffect(() => {
         const storedUserInfo = localStorage.getItem("userInfo");
@@ -27,6 +38,112 @@ export default function HomeCompagnie() {
             setUserInfo(JSON.parse(storedUserInfo));
         }
     }, []);
+
+    useEffect(() => {
+        api.get("/transport", {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+        })
+            .then((response) => {
+                setTransports(response.data);
+            })
+            .catch((error) => {
+                console.error("Erreur lors de la récupération des informations sur le transport", error);
+            });
+    }, []);
+
+    // Filtrage des transports selon userInfo.id
+    const filteredTransports = userInfo
+        ? transports.filter((t) => t.compagnie && t.compagnie.id === userInfo.id)
+        : [];
+
+    useEffect(() => {
+        api.get("/gare", {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+        })
+            .then((response) => {
+                setGare(response.data);
+            })
+            .catch((error) => {
+                console.error("Erreur lors de la récupération des informations sur les gares", error);
+            });
+    }, []);
+
+    // Filtrage des gares selon userInfo.id
+    const filteredGares = userInfo
+        ? gare.filter((g) => g.compagnie && g.compagnie.id === userInfo.id)
+        : [];
+
+        useEffect(() => {
+            api.get("/trajet", {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            })
+                .then((response) => {
+                    setTrajets(response.data);
+                })
+                .catch((error) => {
+                    console.error("Erreur lors de la récupération des informations sur les trajets", error);
+                });
+        }, []);
+
+        //Filtrage des trajets selon userInfo.id
+    const filteredTrajets = userInfo
+        ? trajets.filter((trajet) =>
+            filteredTransports.some((t) => t.id === trajet.transport.id)
+        )
+        : []
+        console.log("Trajets filtrés :", filteredTrajets);
+
+    const handleOpenModal = () => setShowModal(true);
+    const handleCloseModal = () => setShowModal(false);
+
+    const handleOpenHoraireModal = () => setShowHoraireModal(true);
+    const handleCloseHoraireModal = () => setShowHoraireModal(false);
+
+    // Fonction pour enregistrer un Trajet
+    const handleSaveTrajet = (data) => {
+        const token = localStorage.getItem("token");
+        api.post("/trajet", data, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        })
+            .then((response) => {
+                console.log("Billet publié avec succès", response);
+                // Optionnel: mettre à jour l'état local ici
+                setTrajets((prevTrajets) => [...prevTrajets, response.data]);
+                alert("Trajet Enregistré avec succès !");
+            })
+            .catch((error) => {
+                console.error("Erreur lors de la publication du trajet", error);
+            });
+        setShowModal(false);
+    };
+
+    //Fonction pour enregistrer un Horaire
+    const handleSaveHoraire = (data) => {
+        api.post("/horaire", data, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+        })
+            .then((response) => {
+                console.log("Horaire enregistré avec succès", response);
+               // setShowHoraireModal(false);
+                // Optionnel: mettre à jour l'état local ici
+                setHoraires((prevHoraires) => [...prevHoraires, response.data]);
+                alert("Billet publié avec succès !");
+            })
+            .catch((error) => {
+                console.error("Erreur lors de l'enregistrement de l'horaire", error);
+            });
+        setShowHoraireModal(false);
+    };
 
     return (
         <div
@@ -66,6 +183,23 @@ export default function HomeCompagnie() {
                 </div>
             </nav>
 
+            {/* Modal formulaire billet */}
+            <BilletFormModal
+                show={showModal}
+                handleClose={handleCloseModal}
+                handleSave={handleSaveTrajet}
+                listTransport={filteredTransports}
+                listGare={filteredGares}
+            />
+
+            {/* Modal formulaire horaire */}
+            <HoraireFormModal
+                show={showHoraireModal}
+                handleClose={handleCloseHoraireModal}
+                handleSave={handleSaveHoraire}
+                trajets={filteredTrajets}
+            />
+
             <div className="container py-5">
                 <div
                     className="mx-auto"
@@ -98,8 +232,26 @@ export default function HomeCompagnie() {
                                 boxShadow: "0 2px 12px rgba(9,132,227,0.10)",
                                 border: "none",
                             }}
+                            onClick={handleOpenHoraireModal}
                         >
                             + Publier un billet
+                        </button>
+                        <button
+                            className="btn ms-4"
+                            style={{
+                                background: "linear-gradient(90deg, #b80009ff 60%, #0ce4ecff 100%)",
+                                color: "#fff",
+                                fontWeight: 700,
+                                fontSize: 17,
+                                borderRadius: 10,
+                                padding: "14px 32px",
+                                letterSpacing: 0.5,
+                                boxShadow: "0 2px 12px rgba(9,132,227,0.10)",
+                                border: "none",
+                            }}
+                            onClick={handleOpenModal}
+                        >
+                            + Enregistrer un Trajet
                         </button>
                     </div>
                     <h2 style={{ color: "#00cec9", fontSize: 22, marginBottom: 18, fontWeight: 600 }}>
@@ -202,6 +354,18 @@ export default function HomeCompagnie() {
                         <button className="btn" style={{ background: "#0984e3", color: "#fff", fontWeight: 700, fontSize: 16 }}>
                             Modifier mes informations
                         </button>
+                    </div>
+                    <div className="mt-5">
+                        <h2 style={{ color: "#00cec9", fontSize: 22, marginBottom: 18, fontWeight: 600 }}>
+                            Vos transports
+                        </h2>
+                        <ul>
+                            {filteredTransports.map((t) => (
+                                <li key={t.id}>
+                                    {t.type} → {t.numero} → {t.capacite} Places
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 </div>
             </div>
