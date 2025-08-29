@@ -20,6 +20,14 @@ function LoginPage() {
       const token = res.data.token;
       
       // 🔹 stockage du token
+      // localStorage.setItem("token", token);
+
+      // Avant d'enregistrer le nouveau token
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("userInfo");
+
+      // Ensuite, stocke le nouveau token et infos utilisateur
       localStorage.setItem("token", token);
 
       // 🔹 décodage du token (si tu veux récupérer l’email ou le rôle)

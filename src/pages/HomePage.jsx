@@ -13,6 +13,8 @@ const HomePage = () => {
   const [selectedHoraire, setSelectedHoraire] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
   const [horaires, setHoraires] = useState([]);
+  const [filterDepart, setFilterDepart] = useState('');
+  const [filterArrivee, setFilterArrivee] = useState('');
   const monnaie = new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
@@ -81,8 +83,8 @@ const HomePage = () => {
 
       {/* Modal Détail Trajet */}
       <Modal show={showDetail} onHide={handleCloseDetail} centered>
-        <Modal.Header closeButton className='bg-secondary text-light'>
-          <Modal.Title>Détail du trajet</Modal.Title>
+        <Modal.Header closeButton className='bg-black text-light'>
+          <Modal.Title style={{ color: '#0ff' }}>Détail du trajet</Modal.Title>
         </Modal.Header>
         <Modal.Body className='bg-dark text-light'>
           {selectedTrajet && selectedHoraire && (
@@ -100,8 +102,8 @@ const HomePage = () => {
             </div>
           )}
         </Modal.Body>
-        <Modal.Footer className='bg-secondary'>
-          <Button variant="secondary" onClick={handleCloseDetail}>
+        <Modal.Footer className='bg-black text-light'>
+          <Button variant="secondary" style={{ color: '#0ff', borderColor: '#0ff', backgroundColor: 'transparent' }} onClick={handleCloseDetail}>
             Fermer
           </Button>
         </Modal.Footer>
@@ -124,20 +126,95 @@ const HomePage = () => {
             >
               {userInfo && (
                 <h2 className="mb-4" style={{ fontWeight: 700, letterSpacing: 1 }}>
-                   <span style={{ color: '#0ff' }}> {`Bienvenue ${userInfo.prenom}`}</span> 👋
+                  <span style={{ color: '#0ff' }}> {`Bienvenue ${userInfo.prenom}`}</span> 👋
                 </h2>
               )}
+              <h3 className="bg-danger text-light d-flex">INFO GENERALE</h3>
 
-              {userInfo && (
-                <div className="mb-4" style={{ color: "#a4b0be", fontSize: 17 }}>
-                  <h3 className="bg-danger text-light">INFO GENERALE</h3>
-                  <h5>INFO :  {userInfo.prenom} {userInfo.nom}</h5>
-                  <h5>Rôle : {userInfo.role}</h5>
+              <div className='row'>
+
+                {userInfo && (
+                  <div className="col-6 mb-4 " style={{ color: "#a4b0be", fontSize: 17 }}>
+                    <h5>INFO :  {userInfo.prenom} {userInfo.nom}</h5>
+                    <h5>Rôle : {userInfo.role}</h5>
+                  </div>
+                )}
+                <div className="col-6 mt-6 ">
+
+                  <label htmlFor="filter-date" className="form-label" style={{ color: "#0ff" }}>
+                    Filtrage :
+                  </label>
+
                 </div>
-              )} 
-              
-              <h3 className="mb-3" style={{ borderBottom: '1px solid #333', paddingBottom: 8 , color: '#10bed4ff'}}>{`Liste des trajets disponibles`} 🚆</h3>
-              
+              </div>
+              <div className="row">
+                <div className="col-4 mb-4">
+                  <div className='input-group'>
+                    <span className='input-group-text bg-black text-light'> Ville de départ :</span>
+                    <input
+                      type="text"
+                      id="filter-depart"
+                      className="form-control bg-dark text-light"
+                      placeholder="Ex: Paris"
+                      value={filterDepart}
+                      onChange={e => setFilterDepart(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="col-4 mb-4">
+                  <div className='input-group'>
+                    <span className='input-group-text bg-black text-light'> Ville d'arrivée :</span>
+                    <input
+                      type="text"
+                      id="filter-arrivee"
+                      className="form-control bg-dark text-light"
+                      placeholder="Ex: Lyon"
+                      value={filterArrivee}
+                      onChange={e => setFilterArrivee(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className='col-4'>
+                  <input
+                    type="date"
+                    id="filter-date"
+                    className="form-control bg-dark text-light  "
+                    style={{ maxWidth: 250 }}
+                    value={selectedHoraire?.dateDepart ? selectedHoraire.dateDepart.split('T')[0] : ''}
+                    onChange={e => {
+                      const value = e.target.value;
+                      if (!value) {
+                        setHoraires(prev => [...prev]);
+                        setSelectedHoraire(null);
+                        return;
+                      }
+                      setSelectedHoraire({ dateDepart: value });
+                      setHoraires(prev =>
+                        prev.filter(h =>
+                          h.dateDepart && h.dateDepart.startsWith(value)
+                        )
+                      );
+                    }}
+                    placeholder="Choisir une date"
+                  />
+                </div>
+              </div>
+
+              <div className="mb-4 text-end">
+                <button
+                  className="btn btn-sm btn-outline-warning"
+                  onClick={() => {
+                    setFilterDepart('');
+                    setFilterArrivee('');
+                    setSelectedHoraire(null);
+                  }}
+                >
+                  Réinitialiser les filtres
+                </button>
+              </div>
+
+              <h3 className="mb-3" style={{ borderBottom: '1px solid #333', paddingBottom: 8, color: '#10bed4ff' }}>{`Liste des trajets disponibles`} 🚆</h3>
+
               <div className="table-responsive mb-4">
                 <table className="table table-dark table-hover align-middle">
                   <thead>
@@ -158,53 +235,65 @@ const HomePage = () => {
                         </td>
                       </tr>
                     ) : (
-                      horaires.map((h) => {
-                        const t = trajets.find(trajet => trajet.id === h.trajetId);
-                        if (!t) return null;
-                        return (
-                          <tr key={h.id}>
-                            <td>
-                              <strong>
-                                {t.gare_depart.nom} ({t.gare_depart.ville})
-                              </strong>
-                            </td>
-                            <td>
-                              <strong>
-                                {t.gare_arrivee.nom} ({t.gare_arrivee.ville})
-                              </strong>
-                            </td>
-                            <td>
-                              {h.dateDepart && (
-                                <>
-                                  {new Date(h.dateDepart).toLocaleDateString()} <br />
-                                  <span className="text-info">{new Date(h.dateDepart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                </>
-                              )}
-                            </td>
-                            <td>
-                              <span className="badge bg-danger">
-                                {monnaie.format(t.prix)}
-                              </span>
-                            </td>
-                            <td>
-                              {t.transport.compagnie.nom}
-                            </td>
-                            <td>
-                              <div className="d-flex">
-                                <button
-                                  className="btn btn-outline-info btn-sm me-2"
-                                  onClick={() => handleShowDetail(t, h)}
-                                >
-                                  Détail
-                                </button>
-                                <button className="btn btn-outline-info btn-sm" disabled>
-                                  Réserver
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
+                      horaires
+                        .filter((h) => {
+                          const t = trajets.find(trajet => trajet.id === h.trajetId);
+                          if (!t) return false;
+                          const departOk = filterDepart === '' || t.gare_depart.ville.toLowerCase().includes(filterDepart.toLowerCase());
+                          const arriveeOk = filterArrivee === '' || t.gare_arrivee.ville.toLowerCase().includes(filterArrivee.toLowerCase());
+                          return departOk && arriveeOk;
+                        })
+                        .map((h) => {
+                          const t = trajets.find(trajet => trajet.id === h.trajetId);
+                          if (!t) return null;
+                          return (
+                            <tr key={h.id}>
+                              <td>
+                                <strong>
+                                  {t.gare_depart.nom} ({t.gare_depart.ville})
+                                </strong>
+                              </td>
+                              <td>
+                                <strong>
+                                  {t.gare_arrivee.nom} ({t.gare_arrivee.ville})
+                                </strong>
+                              </td>
+                              <td>
+                                {h.dateDepart && (
+                                  <>
+                                    {new Date(h.dateDepart).toLocaleDateString()} <br />
+                                    <span className="text-info">{new Date(h.dateDepart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                  </>
+                                )}
+                              </td>
+                              <td>
+                                <span className="badge bg-danger">
+                                  {monnaie.format(t.prix)}
+                                </span>
+                              </td>
+                              <td>
+                                {t.transport.compagnie.nom}
+                              </td>
+                              <td>
+                                <div className="d-flex">
+                                  <button
+                                    className="btn btn-outline-info btn-sm me-2"
+                                    onClick={() => handleShowDetail(t, h)}
+                                  >
+                                    Détail
+                                  </button>
+                      
+                                  <button
+                                    className="btn btn-outline-info btn-sm"
+                                    onClick={() => navigate("/confirmation", { state: { trajet: t, horaire: h } })}
+                                  >
+                                    Réserver
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
                     )}
                   </tbody>
                 </table>

@@ -7,6 +7,8 @@ import PaiementPage from "./pages/PaiementPage";
 import MesReservations from "./pages/MesReservations";
 import CompagnieLogin from "./pages/CompagnieLogin";
 import HomeCompagnie from "./pages/HomeCompagnie";
+import Profil from "./pages/profil";
+import ConfirmationPage from "./pages/ConfirmationPage";
 
 
 function App() {
@@ -19,9 +21,11 @@ function App() {
           <Route path="/compagnie-login" element={<CompagnieLogin />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/reservation/:id" element={<ReservationPage />} />
-          <Route path="/paiement/:id" element={<PaiementPage />} />
+          <Route path="/paiement/" element={<PaiementPage />} />
           <Route path="/mes-reservations" element={<MesReservations />} />
           <Route path="/compagnie" element={<HomeCompagnie />} />
+          <Route path="/profil" element={<Profil />} />
+          <Route path="/confirmation" element={<ConfirmationPage />} />
         </Routes>
       </Router>
   
