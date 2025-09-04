@@ -35,6 +35,9 @@ const Navbar = () => {
               <Link className="nav-link" to="/mes-reservations">Mes réservations</Link>
             </li>
             <li className="nav-item">
+              <Link className="nav-link" to="/mes-billets">Mes billets</Link>
+            </li>
+            <li className="nav-item">
               <Link className="nav-link" to="/profil">Profil</Link>
             </li>
             <li className="nav-item">

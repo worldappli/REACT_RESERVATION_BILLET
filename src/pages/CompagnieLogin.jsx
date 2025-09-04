@@ -36,9 +36,11 @@ function CompagnieLogin() {
         },
       });
 
-      setUser(meRes.data);
-      localStorage.setItem("userInfo", JSON.stringify(meRes.data)); // Stockage des infos utilisateur
-      console.log("Utilisateur connecté:", meRes.data);
+  // Ajout de la colonne type: compagnie
+  const userInfoWithType = { ...meRes.data, type: "compagnie" };
+  setUser(userInfoWithType);
+  localStorage.setItem("userInfo", JSON.stringify(userInfoWithType)); // Stockage des infos utilisateur avec type
+  console.log("Utilisateur connecté:", userInfoWithType);
 
       // 🔹 redirection
       navigate("/compagnie");

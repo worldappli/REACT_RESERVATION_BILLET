@@ -9,7 +9,8 @@ import CompagnieLogin from "./pages/CompagnieLogin";
 import HomeCompagnie from "./pages/HomeCompagnie";
 import Profil from "./pages/profil";
 import ConfirmationPage from "./pages/ConfirmationPage";
-
+import Billets from "./pages/billets";
+import MesBillets from "./pages/MesBillets";
 
 function App() {
   return (
@@ -26,6 +27,8 @@ function App() {
           <Route path="/compagnie" element={<HomeCompagnie />} />
           <Route path="/profil" element={<Profil />} />
           <Route path="/confirmation" element={<ConfirmationPage />} />
+          <Route path="/billets" element={<Billets />} />
+          <Route path="/mes-billets" element={<MesBillets />} />
         </Routes>
       </Router>
   

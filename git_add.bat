@@ -1,5 +1,5 @@
 git add .
-git commit -m Décris ici ce que tu as modifié
+git commit -m "amelioration et path des bug"
 git push origin main
 
 pause

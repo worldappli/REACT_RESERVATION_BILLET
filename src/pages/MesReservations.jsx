@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import Navbar from './Navbar';
 import api from '../services/api';
@@ -8,6 +9,7 @@ const MesReservations = () => {
     const [horaires, setHoraires] = useState([]);
     const [trajets, setTrajets] = useState([]);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     // Récupère l'utilisateur connecté
     const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
@@ -125,7 +127,14 @@ const MesReservations = () => {
                                                     <button
                                                         className="btn btn-outline-warning btn-sm"
                                                         onClick={() => {
-                                                            window.location.href = `/paiement/`;
+                                                            navigate('/paiement', {
+                                                                state: {
+                                                                    reservationId: reservation.id,
+                                                                    montant: trajet ? trajet.prix : null,
+                                                                    nom: reservation.nom_passager,
+                                                                    prenom: reservation.prenom_passager
+                                                                }
+                                                            });
                                                         }}
                                                     >
                                                         Continuer
