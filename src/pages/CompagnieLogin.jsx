@@ -29,18 +29,27 @@ function CompagnieLogin() {
       localStorage.setItem("user", JSON.stringify(decoded));
 
       // 🔹 récupération des infos utilisateur via /me
-      
       const meRes = await api.get("/auth/c/me", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-  // Ajout de la colonne type: compagnie
-  const userInfoWithType = { ...meRes.data, type: "compagnie" };
-  setUser(userInfoWithType);
-  localStorage.setItem("userInfo", JSON.stringify(userInfoWithType)); // Stockage des infos utilisateur avec type
-  console.log("Utilisateur connecté:", userInfoWithType);
+      // Vérification du statut (insensible à la casse et aux espaces)
+      if ((meRes.data.statut || '').trim().toLowerCase() !== 'actif') {
+        setUser(null);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("userInfo");
+        alert("Votre compte n'est pas encore activé. Veuillez vérifier votre email. (statut actuel : " + meRes.data.statut + ")");
+        return;
+      }
+
+      // Ajout de la colonne type: compagnie
+      const userInfoWithType = { ...meRes.data, type: "compagnie" };
+      setUser(userInfoWithType);
+      localStorage.setItem("userInfo", JSON.stringify(userInfoWithType)); // Stockage des infos utilisateur avec type
+      console.log("Utilisateur connecté:", userInfoWithType);
 
       // 🔹 redirection
       navigate("/compagnie");
@@ -93,7 +102,7 @@ function CompagnieLogin() {
               </Form>
               <p className="text-center mt-3">
                 Pas encore de compte ?{" "}
-                <a href="/register" className="text-decoration-none">
+                <a href="/register-compagnie" className="text-decoration-none">
                   Inscrivez-vous
                 </a>
               </p>

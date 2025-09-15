@@ -12,6 +12,7 @@ const Billets = () => {
     const navigate = useNavigate();
     const reservationId = location.state?.reservationId;
     const [billet, setBillet] = useState(null);
+    const [isCreating, setIsCreating] = useState(false);
     const [reservation, setReservation] = useState(null);
     const [horaire, setHoraire] = useState(null);
     const [trajet, setTrajet] = useState(null);
@@ -21,7 +22,8 @@ const Billets = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            if (!reservationId) return;
+            if (!reservationId || isCreating) return;
+            setIsCreating(true);
             setLoading(true);
             const token = localStorage.getItem("token");
             const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -42,6 +44,7 @@ const Billets = () => {
                         billetData = billetRes.data;
                     }
                     setBillet(billetData);
+                    setIsCreating(false);
 
                 // Récupère la réservation
                 const resRes = await api.get(`/reservation/${reservationId}`, { headers });
@@ -62,6 +65,7 @@ const Billets = () => {
                 }
             } catch (err) {
                 setError("Erreur lors de la génération ou récupération du billet.");
+                setIsCreating(false);
             } finally {
                 setLoading(false);
             }

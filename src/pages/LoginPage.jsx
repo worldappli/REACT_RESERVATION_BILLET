@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Row, Col, Form, Button, Card } from "react-bootstrap";
 import api from "../services/api"; // ton fichier axios (baseURL)
 import jwtDecode from "jwt-decode";
 
 function LoginPage() {
+  // Nettoyage du localStorage dès l'arrivée sur la page de login
+  useEffect(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("userInfo");
+  }, []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null); // ✅ ajouter l'état utilisateur
@@ -43,10 +49,18 @@ function LoginPage() {
         },
       });
 
+      // Vérification du statut (insensible à la casse et aux espaces)
+      if ((meRes.data.statut || '').trim().toLowerCase() !== 'actif') {
+        setUser(null);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("userInfo");
+        alert("Votre compte n'est pas encore activé. Veuillez vérifier votre email. (statut actuel : " + meRes.data.statut + ")");
+        return;
+      } 
       setUser(meRes.data);
       localStorage.setItem("userInfo", JSON.stringify(meRes.data)); // Stockage des infos utilisateur
       console.log("Utilisateur connecté:", meRes.data);
-
       // 🔹 redirection
       navigate("/");
     } catch (err) {

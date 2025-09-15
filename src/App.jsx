@@ -11,6 +11,9 @@ import Profil from "./pages/profil";
 import ConfirmationPage from "./pages/ConfirmationPage";
 import Billets from "./pages/billets";
 import MesBillets from "./pages/MesBillets";
+import VerifyPage from "./pages/VerifyPage";
+import RegisterCompagniePage from "./pages/RegisterCompagniePage";
+import VerifyCompagniePage from "./pages/VerifyCompagniePage";
 
 function App() {
   return (
@@ -29,6 +32,9 @@ function App() {
           <Route path="/confirmation" element={<ConfirmationPage />} />
           <Route path="/billets" element={<Billets />} />
           <Route path="/mes-billets" element={<MesBillets />} />
+          <Route path="/verification" element={<VerifyPage />} />
+          <Route path="/register-compagnie" element={<RegisterCompagniePage />} />
+          <Route path="/c/verification" element={<VerifyCompagniePage />} />
         </Routes>
       </Router>
   
