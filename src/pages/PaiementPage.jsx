@@ -1,10 +1,11 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { FaCcVisa, FaCcMastercard, FaPaypal, FaMobileAlt, FaMoneyBillWave, FaMoneyCheckAlt, FaUser, FaCreditCard, FaShieldCheck } from "react-icons/fa";
+import { FaCcVisa, FaCcMastercard, FaPaypal, FaMobileAlt, FaMoneyBillWave, FaMoneyCheckAlt, FaUser, FaCreditCard } from "react-icons/fa";
 import Navbar from "./Navbar";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../services/api";
 import monnaie from "../services/variable";
+import { Button, Modal } from "react-bootstrap";
 
 const paymentOptions = [
     {
@@ -249,7 +250,7 @@ const PaiementPage = () => {
                                         Moyens de Paiement
                                     </h3>
                                     <div className="badge bg-success fs-6">
-                                        <FaShieldCheck className="me-1" />
+                                        <i className="fas fa-shield-alt me-1"></i>
                                         Sécurisé
                                     </div>
                                 </div>
