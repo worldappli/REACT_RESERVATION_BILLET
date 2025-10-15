@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import BilletFormModal from "./BilletFormModal";
 import api from "../services/api";
-import { Modal, Button, Form, Container, Row, Col } from "react-bootstrap";
+import { Modal, Button, Form, Container, Row, Col, Card, Badge } from "react-bootstrap";
 import HoraireFormModal from "./HoraireFormModal";
 import { useNavigate } from "react-router-dom";
 
@@ -14,11 +14,13 @@ export default function HomeCompagnie() {
     const [transports, setTransports] = useState([]);
     const [gare, setGare] = useState([]);
     const [trajets, setTrajets] = useState([]);
-    const [horaires, setHoraires] = useState([]); // <-- AJOUT ICI
+    const [horaires, setHoraires] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     const monnaie = new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-  });
+        style: 'currency',
+        currency: 'EUR',
+    });
 
     // Vérification de l'authentification au chargement
     useEffect(() => {
@@ -31,97 +33,58 @@ export default function HomeCompagnie() {
         }
     }, [navigate]);
 
-    // Récupération des transports
+    // Récupération des données
     useEffect(() => {
-        api.get("/transport", {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-        })
-            .then((response) => {
-                setTransports(response.data);
-            })
-            .catch((error) => {
-                console.error("Erreur lors de la récupération des informations sur le transport", error);
-            });
+        const fetchData = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                const headers = { Authorization: `Bearer ${token}` };
+
+                const [transportsRes, garesRes, trajetsRes, horairesRes] = await Promise.all([
+                    api.get("/transport", { headers }),
+                    api.get("/gare", { headers }),
+                    api.get("/trajet", { headers }),
+                    api.get("/horaire", { headers })
+                ]);
+
+                setTransports(transportsRes.data);
+                setGare(garesRes.data);
+                setTrajets(trajetsRes.data);
+                setHoraires(horairesRes.data);
+            } catch (error) {
+                console.error("Erreur lors de la récupération des données", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
     }, []);
 
-    // Filtrage des transports selon userInfo.id
+    // Filtrage des données selon userInfo.id
     const filteredTransports = userInfo
         ? transports.filter((t) => t.compagnie && t.compagnie.id === userInfo.id)
         : [];
 
-    // Récupération des gares
-    useEffect(() => {
-        api.get("/gare", {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-        })
-            .then((response) => {
-                setGare(response.data);
-            })
-            .catch((error) => {
-                console.error("Erreur lors de la récupération des informations sur les gares", error);
-            });
-    }, []);
-
-    // Filtrage des gares selon userInfo.id
     const filteredGares = userInfo
         ? gare.filter((g) => g.compagnie && g.compagnie.id === userInfo.id)
         : [];
 
-    // Récupération des trajets
-    useEffect(() => {
-        api.get("/trajet", {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-        })
-            .then((response) => {
-                setTrajets(response.data);
-            })
-            .catch((error) => {
-                console.error("Erreur lors de la récupération des informations sur les trajets", error);
-            });
-    }, []);
-
-    //Filtrage des trajets selon userInfo.id
     const filteredTrajets = userInfo
         ? trajets.filter((trajet) =>
             filteredTransports.some((t) => t.id === trajet.transport.id)
         )
-        : []
-    console.log("Trajets filtrés :", filteredTrajets);
+        : [];
 
-    // récupération des Horaires
-    useEffect(() => {
-        api.get("/horaire", {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-        })
-            .then((response) => {
-                setHoraires(response.data);
-            })
-            .catch((error) => {
-                console.error("Erreur lors de la récupération des informations sur les horaires", error);
-            });
-    }, []);
-
-    // Filtrage des horaires selon trajet.id
     const filteredHoraires = userInfo
         ? horaires.filter((h) => filteredTrajets.some((t) => t.id === h.trajetId))
         : [];
-    console.log("Horaires filtrés :", filteredHoraires);
 
     const handleOpenModal = () => setShowModal(true);
     const handleCloseModal = () => setShowModal(false);
 
     const handleOpenHoraireModal = () => setShowHoraireModal(true);
     const handleCloseHoraireModal = () => setShowHoraireModal(false);
-
-
 
     // Fonction pour enregistrer un Trajet
     const handleSaveTrajet = (data) => {
@@ -132,8 +95,6 @@ export default function HomeCompagnie() {
             },
         })
             .then((response) => {
-                console.log("Billet publié avec succès", response);
-                // Optionnel: mettre à jour l'état local ici
                 setTrajets((prevTrajets) => [...prevTrajets, response.data]);
                 alert("Trajet Enregistré avec succès !");
             })
@@ -143,7 +104,7 @@ export default function HomeCompagnie() {
         setShowModal(false);
     };
 
-    //Fonction pour enregistrer un Horaire
+    // Fonction pour enregistrer un Horaire
     const handleSaveHoraire = (data) => {
         api.post("/horaire", data, {
             headers: {
@@ -151,9 +112,6 @@ export default function HomeCompagnie() {
             },
         })
             .then((response) => {
-                console.log("Horaire enregistré avec succès", response);
-                // setShowHoraireModal(false);
-                // Optionnel: mettre à jour l'état local ici
                 setHoraires((prevHoraires) => [...prevHoraires, response.data]);
                 alert("Billet publié avec succès !");
             })
@@ -163,21 +121,36 @@ export default function HomeCompagnie() {
         setShowHoraireModal(false);
     };
 
+    if (loading) {
+        return (
+            <div style={{
+                background: "linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%)",
+                minHeight: "100vh"
+            }}>
+                <div className="d-flex justify-content-center align-items-center vh-100">
+                    <div className="text-center">
+                        <div className="spinner-border text-info mb-3" style={{width: '3rem', height: '3rem'}} role="status">
+                            <span className="visually-hidden">Chargement...</span>
+                        </div>
+                        <h5 className="text-light">Chargement du tableau de bord...</h5>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div
-            style={{
-                minHeight: "100vh",
-                background: "linear-gradient(120deg, #181920 0%, #232526 100%)",
-                color: "#f1f2f6",
-                fontFamily: "Segoe UI, Arial, sans-serif",
-                paddingTop: 0,
-            }}
-        >
-            {/* Navbar Bootstrap */}
-            <nav className="navbar navbar-expand-lg navbar-dark bg-dark" style={{ background: "#181920" }}>
+        <div style={{
+            background: "linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%)",
+            minHeight: "100vh",
+            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+        }}>
+            {/* Navbar */}
+            <nav className="navbar navbar-expand-lg navbar-dark" style={{ background: "rgba(0, 0, 0, 0.9)" }}>
                 <div className="container">
-                    <a className="navbar-brand" href="#">
-                        <span style={{ color: "#00b894", fontWeight: 700 }}>Compagnie Admin</span>
+                    <a className="navbar-brand fw-bold fs-3" href="#">
+                        <i className="fas fa-train me-2 text-info"></i>
+                        <span style={{ color: "#00b894" }}>Compagnie Admin</span>
                     </a>
                     <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                         <span className="navbar-toggler-icon"></span>
@@ -185,18 +158,27 @@ export default function HomeCompagnie() {
                     <div className="collapse navbar-collapse" id="navbarNav">
                         <ul className="navbar-nav ms-auto">
                             <li className="nav-item">
-                                <a className="nav-link active" href="#">Tableau de bord</a>
+                                <a className="nav-link active fw-semibold" href="#">
+                                    <i className="fas fa-tachometer-alt me-1"></i>
+                                    Tableau de bord
+                                </a>
                             </li>
                             <li className="nav-item">
-                                <a className="nav-link" href="#">Billets</a>
+                                <a className="nav-link fw-semibold" href="#">
+                                    <i className="fas fa-ticket-alt me-1"></i>
+                                    Billets
+                                </a>
                             </li>
                             <li className="nav-item">
-                                <a className="nav-link" href="#">Profil</a>
+                                <a className="nav-link fw-semibold" href="#">
+                                    <i className="fas fa-user me-1"></i>
+                                    Profil
+                                </a>
                             </li>
                             <li className="nav-item">
                                 <a
-                                    className="nav-link"
-                                    style={{ cursor: "pointer" }}
+                                    className="nav-link fw-semibold"
+                                    style={{ cursor: "pointer", color: "#ff6b6b" }}
                                     onClick={() => {
                                         localStorage.removeItem("token");
                                         localStorage.removeItem("userInfo");
@@ -204,6 +186,7 @@ export default function HomeCompagnie() {
                                         navigate("/compagnie-login");
                                     }}
                                 >
+                                    <i className="fas fa-sign-out-alt me-1"></i>
                                     Déconnexion
                                 </a>
                             </li>
@@ -229,202 +212,313 @@ export default function HomeCompagnie() {
                 trajets={filteredTrajets}
             />
 
-            <Container fluid className="py-5">
+            <Container className="py-5">
+                {/* En-tête */}
+                <Row className="justify-content-center mb-5">
+                    <Col xs={12} className="text-center">
+                        <h1 className="text-white fw-bold mb-3">
+                            <i className="fas fa-tachometer-alt me-3 text-info"></i>
+                            Tableau de Bord Compagnie
+                        </h1>
+                        <p className="text-light opacity-75 fs-5">
+                            Gérez vos trajets, publiez des billets et surveillez votre activité
+                        </p>
+                    </Col>
+                </Row>
+
                 <Row className="justify-content-center">
-                    <Col xs={12} md={12} lg={10} xl={8}>
-                        <div className="bg-dark rounded-4 shadow p-3 p-md-5">
-                            <h1 className="mb-2" style={{ fontWeight: 700, fontSize: 34, color: "#00b894", letterSpacing: 1 }}>
-                                Tableau de bord Compagnie
-                            </h1>
-                            <p className="mb-4" style={{ color: "#a4b0be", fontSize: 17 }}>
-                                Gérez vos billets et trajets, publiez de nouveaux billets, et modifiez vos informations de compagnie.
-                            </p>
-                            <div className="container d-flex flex-column flex-md-row ">
-                                <div className="col-md-6 mb-4">
-                                    <button
-                                        className="btn"
-                                        style={{
-                                            background: "linear-gradient(90deg, #00b894 60%, #0984e3 100%)",
-                                            color: "#fff",
-                                            fontWeight: 700,
-                                            fontSize: 17,
-                                            borderRadius: 10,
-                                            padding: "14px 32px",
-                                            letterSpacing: 0.5,
-                                            boxShadow: "0 2px 12px rgba(9,132,227,0.10)",
-                                            border: "none",
-                                        }}
-                                        onClick={handleOpenHoraireModal}
-                                    >
-                                        + Publier un billet
-                                    </button>
+                    <Col xs={12} lg={11} xl={10}>
+                        {/* Cartes de statistiques */}
+                        <Row className="g-4 mb-5">
+                            <Col md={3}>
+                                <Card className="border-0 shadow-lg bg-dark text-center hover-card">
+                                    <Card.Body className="p-4">
+                                        <div className="bg-info rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                             style={{ width: '70px', height: '70px' }}>
+                                            <i className="fas fa-train fa-2x text-white"></i>
+                                        </div>
+                                        <h3 className="text-white fw-bold">{filteredTransports.length}</h3>
+                                        <p className="text-light mb-0">Transports</p>
+                                    </Card.Body>
+                                </Card>
+                            </Col>
+                            <Col md={3}>
+                                <Card className="border-0 shadow-lg bg-dark text-center hover-card">
+                                    <Card.Body className="p-4">
+                                        <div className="bg-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                             style={{ width: '70px', height: '70px' }}>
+                                            <i className="fas fa-route fa-2x text-white"></i>
+                                        </div>
+                                        <h3 className="text-white fw-bold">{filteredTrajets.length}</h3>
+                                        <p className="text-light mb-0">Trajets</p>
+                                    </Card.Body>
+                                </Card>
+                            </Col>
+                            <Col md={3}>
+                                <Card className="border-0 shadow-lg bg-dark text-center hover-card">
+                                    <Card.Body className="p-4">
+                                        <div className="bg-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                             style={{ width: '70px', height: '70px' }}>
+                                            <i className="fas fa-ticket-alt fa-2x text-white"></i>
+                                        </div>
+                                        <h3 className="text-white fw-bold">{filteredHoraires.length}</h3>
+                                        <p className="text-light mb-0">Billets Publiés</p>
+                                    </Card.Body>
+                                </Card>
+                            </Col>
+                            <Col md={3}>
+                                <Card className="border-0 shadow-lg bg-dark text-center hover-card">
+                                    <Card.Body className="p-4">
+                                        <div className="bg-purple rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                             style={{ width: '70px', height: '70px' }}>
+                                            <i className="fas fa-map-marker-alt fa-2x text-white"></i>
+                                        </div>
+                                        <h3 className="text-white fw-bold">{filteredGares.length}</h3>
+                                        <p className="text-light mb-0">Gares</p>
+                                    </Card.Body>
+                                </Card>
+                            </Col>
+                        </Row>
+
+                        {/* Actions rapides */}
+                        <Card className="border-0 shadow-lg bg-dark mb-5">
+                            <Card.Header className="bg-transparent border-info py-4">
+                                <h3 className="text-info mb-0">
+                                    <i className="fas fa-bolt me-2"></i>
+                                    Actions Rapides
+                                </h3>
+                            </Card.Header>
+                            <Card.Body className="p-4">
+                                <Row className="g-4">
+                                    <Col md={6}>
+                                        <Button
+                                            variant="info"
+                                            size="lg"
+                                            className="w-100 fw-bold py-3 fs-5"
+                                            onClick={handleOpenHoraireModal}
+                                        >
+                                            <i className="fas fa-plus-circle me-2"></i>
+                                            Publier un Billet
+                                        </Button>
+                                    </Col>
+                                    <Col md={6}>
+                                        <Button
+                                            variant="warning"
+                                            size="lg"
+                                            className="w-100 fw-bold py-3 fs-5"
+                                            onClick={handleOpenModal}
+                                        >
+                                            <i className="fas fa-route me-2"></i>
+                                            Créer un Trajet
+                                        </Button>
+                                    </Col>
+                                </Row>
+                            </Card.Body>
+                        </Card>
+
+                        {/* Billets publiés */}
+                        <Card className="border-0 shadow-lg bg-dark mb-5">
+                            <Card.Header className="bg-transparent border-info py-4">
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <h3 className="text-info mb-0">
+                                        <i className="fas fa-ticket-alt me-2"></i>
+                                        Billets Publiés
+                                    </h3>
+                                    <Badge bg="info" className="fs-6">
+                                        {filteredHoraires.length} billets
+                                    </Badge>
                                 </div>
-                                <div className="col-md-6 mb-4">
-                                    <button
-                                        className="btn"
-                                        style={{
-                                            background: "linear-gradient(90deg, #b80009ff 60%, #0ce4ecff 100%)",
-                                            color: "#fff",
-                                            fontWeight: 700,
-                                            fontSize: 17,
-                                            borderRadius: 10,
-                                            padding: "14px 32px",
-                                            letterSpacing: 0.5,
-                                            boxShadow: "0 2px 12px rgba(9,132,227,0.10)",
-                                            border: "none",
-                                        }}
-                                        onClick={handleOpenModal}
-                                    >
-                                        + Enregistrer un Trajet
-                                    </button>
-                                </div>
-                            </div>
-                            <h2 style={{ color: "#00cec9", fontSize: 22, marginBottom: 18, fontWeight: 600 }}>
-                                Vos billets publiés
-                            </h2>
-                            <div className="table-responsive">
-                                <table className="table table-dark table-hover align-middle" style={{ borderRadius: 10, overflow: "hidden" }}>
-                                    <thead>
-                                        <tr>
-                                            <th>Trajet</th>
-                                            <th>Date</th>
-                                            <th>Prix</th>
-                                            {/* <th>Statut</th> */}
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredHoraires.map((billet) => (
-                                            <tr key={billet.id}>
-                                                <td>
-                                                    {
-                                                        (() => {
-                                                            const trajet = filteredTrajets.find(t => t.id === billet.trajetId);
-                                                            // if (!trajet) return billet.trajetId;
-                                                            // const gareDepart = filteredGares.find(g => g.id === trajet.gareDepartId);
-                                                            // const gareArrivee = filteredGares.find(g => g.id === trajet.gareArriveeId);
-                                                            return (
-                                                                <>
-                                                                    {trajet.gare_depart.nom} → {trajet.gare_arrivee.nom}
-                                                                </>
-                                                            );
-                                                        })()
-                                                    }
-                                                </td>
-                                                {/* <td>{billet.trajetId}</td> */}
-                                                <td>{billet.dateDepart}</td>
-                                                <td>
-                                                    {
-                                                        (() => {
-                                                            const trajet = filteredTrajets.find(t => t.id === billet.trajetId);
-                                                            // if (!trajet) return billet.trajetId;
-                                                            // const gareDepart = filteredGares.find(g => g.id === trajet.gareDepartId);
-                                                            // const gareArrivee = filteredGares.find(g => g.id === trajet.gareArriveeId);
-                                                            return (
-                                                                <>
-                                                                    {monnaie.format(trajet.prix)}
-                                                                </>
-                                                            );
-                                                        })()
-                                                    }
-                                                </td>
-                                                {/* <td>
-                                                    <span
-                                                        className={`badge px-3 py-2 rounded-pill fw-semibold`}
-                                                        style={{
-                                                            background:
-                                                                billet.statut === "Publié"
-                                                                    ? "#00b894"
-                                                                    : "#636e72",
-                                                            color: "#fff",
-                                                            fontSize: 15,
-                                                            letterSpacing: 0.5,
-                                                        }}
-                                                    >
-                                                        {billet.statut}
-                                                    </span>
-                                                </td> */}
-                                                <td className="">
-                                                    <button className="btn btn-secondary btn-sm mx-2 mb-2">Modifier</button>
-                                                        <button className="btn btn-sm mb-2" style={{ background: "#d63031", color: "#fff" }}>
-                                                            Supprimer
-                                                         </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div className="mt-5">
-                                <h2 style={{ color: "#00cec9", fontSize: 22, marginBottom: 18, fontWeight: 600 }}>
-                                    Informations de la compagnie
-                                </h2>
-                                <div
-                                    className="mb-3"
-                                    style={{
-                                        background: "#232526",
-                                        borderRadius: 10,
-                                        padding: "24px 32px",
-                                        color: "#f1f2f6",
-                                        fontSize: 17,
-                                        boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
-                                    }}
-                                >
-                                    <div className="mb-2">
-                                        <strong>Nom :</strong> {userInfo ? userInfo.nom : "Air France"}
+                            </Card.Header>
+                            <Card.Body className="p-0">
+                                {filteredHoraires.length === 0 ? (
+                                    <div className="text-center py-5">
+                                        <i className="fas fa-ticket-alt fa-4x text-secondary mb-4"></i>
+                                        <h5 className="text-light mb-3">Aucun billet publié</h5>
+                                        <p className="text-muted">Commencez par publier votre premier billet</p>
+                                        <Button variant="info" onClick={handleOpenHoraireModal}>
+                                            <i className="fas fa-plus me-2"></i>
+                                            Publier un billet
+                                        </Button>
                                     </div>
-                                    <div className="mb-2">
-                                        <strong>Email :</strong> {userInfo ? userInfo.email : "contact@airfrance.com"}
+                                ) : (
+                                    <div className="table-responsive">
+                                        <table className="table table-dark table-hover align-middle mb-0">
+                                            <thead className="bg-black">
+                                                <tr>
+                                                    <th className="border-0 ps-4">
+                                                        <i className="fas fa-route me-2"></i>
+                                                        Trajet
+                                                    </th>
+                                                    <th className="border-0">
+                                                        <i className="fas fa-calendar me-2"></i>
+                                                        Date Départ
+                                                    </th>
+                                                    <th className="border-0">
+                                                        <i className="fas fa-euro-sign me-2"></i>
+                                                        Prix
+                                                    </th>
+                                                    <th className="border-0 text-end pe-4">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {filteredHoraires.map((billet) => {
+                                                    const trajet = filteredTrajets.find(t => t.id === billet.trajetId);
+                                                    return (
+                                                        <tr key={billet.id} className="hover-row">
+                                                            <td className="ps-4">
+                                                                {trajet ? (
+                                                                    <div>
+                                                                        <div className="fw-bold text-white">
+                                                                            {trajet.gare_depart.nom} → {trajet.gare_arrivee.nom}
+                                                                        </div>
+                                                                        <small className="text-info">
+                                                                            {trajet.transport.type} n°{trajet.transport.numero}
+                                                                        </small>
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="text-warning">Trajet non trouvé</span>
+                                                                )}
+                                                            </td>
+                                                            <td>
+                                                                <div className="fw-bold">
+                                                                    {billet.dateDepart ? new Date(billet.dateDepart).toLocaleDateString() : "N/A"}
+                                                                </div>
+                                                                <small className="text-muted">
+                                                                    {billet.dateDepart ? new Date(billet.dateDepart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
+                                                                </small>
+                                                            </td>
+                                                            <td>
+                                                                <Badge bg="danger" className="fs-6">
+                                                                    {trajet ? monnaie.format(trajet.prix) : "N/A"}
+                                                                </Badge>
+                                                            </td>
+                                                            <td className="text-end pe-4">
+                                                                <div className="d-flex justify-content-end gap-2">
+                                                                    <Button variant="outline-info" size="sm">
+                                                                        <i className="fas fa-edit me-1"></i>
+                                                                        Modifier
+                                                                    </Button>
+                                                                    <Button variant="outline-danger" size="sm">
+                                                                        <i className="fas fa-trash me-1"></i>
+                                                                        Supprimer
+                                                                    </Button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <div>
-                                        <strong>Statut :</strong>{" "}
-                                        {userInfo && userInfo.statut === "actif" ? (
-                                            <span
-                                                className="badge px-3 py-2 rounded-pill fw-semibold"
-                                                style={{
-                                                    background: "#00b894",
-                                                    color: "#fff",
-                                                    fontSize: 15,
-                                                    letterSpacing: 0.5,
-                                                }}
-                                            >
-                                                Actif
-                                            </span>
+                                )}
+                            </Card.Body>
+                        </Card>
+
+                        {/* Informations Compagnie et Transports */}
+                        <Row className="g-4">
+                            <Col lg={6}>
+                                <Card className="border-0 shadow-lg bg-dark h-100">
+                                    <Card.Header className="bg-transparent border-info py-4">
+                                        <h3 className="text-info mb-0">
+                                            <i className="fas fa-building me-2"></i>
+                                            Informations Compagnie
+                                        </h3>
+                                    </Card.Header>
+                                    <Card.Body className="p-4">
+                                        <div className="d-flex align-items-center mb-4">
+                                            <div className="bg-info rounded-circle d-inline-flex align-items-center justify-content-center me-3"
+                                                 style={{ width: '60px', height: '60px' }}>
+                                                <i className="fas fa-train text-white fa-lg"></i>
+                                            </div>
+                                            <div>
+                                                <h5 className="text-white mb-1">{userInfo?.nom || "Nom de la compagnie"}</h5>
+                                                <p className="text-muted mb-0">{userInfo?.email || "email@compagnie.com"}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="mb-3">
+                                            <Badge bg={userInfo?.statut === "actif" ? "success" : "danger"} className="fs-6">
+                                                <i className={`fas ${userInfo?.statut === "actif" ? "fa-check-circle" : "fa-times-circle"} me-1`}></i>
+                                                {userInfo?.statut === "actif" ? "Actif" : "Inactif"}
+                                            </Badge>
+                                        </div>
+                                        
+                                        <Button variant="outline-info" className="w-100">
+                                            <i className="fas fa-edit me-2"></i>
+                                            Modifier les informations
+                                        </Button>
+                                    </Card.Body>
+                                </Card>
+                            </Col>
+                            
+                            <Col lg={6}>
+                                <Card className="border-0 shadow-lg bg-dark h-100">
+                                    <Card.Header className="bg-transparent border-info py-4">
+                                        <div className="d-flex justify-content-between align-items-center">
+                                            <h3 className="text-info mb-0">
+                                                <i className="fas fa-bus me-2"></i>
+                                                Vos Transports
+                                            </h3>
+                                            <Badge bg="info" className="fs-6">
+                                                {filteredTransports.length}
+                                            </Badge>
+                                        </div>
+                                    </Card.Header>
+                                    <Card.Body className="p-4">
+                                        {filteredTransports.length === 0 ? (
+                                            <div className="text-center py-3">
+                                                <i className="fas fa-train fa-3x text-secondary mb-3"></i>
+                                                <p className="text-muted">Aucun transport enregistré</p>
+                                            </div>
                                         ) : (
-                                            <span
-                                                className="badge px-3 py-2 rounded-pill fw-semibold"
-                                                style={{
-                                                    background: "#d63031",
-                                                    color: "#fff",
-                                                    fontSize: 15,
-                                                    letterSpacing: 0.5,
-                                                }}
-                                            >
-                                                Inactif
-                                            </span>
+                                            <div className="row g-3">
+                                                {filteredTransports.map((transport) => (
+                                                    <div key={transport.id} className="col-12">
+                                                        <div className="bg-black rounded p-3 d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <h6 className="text-white mb-1">
+                                                                    {transport.type} n°{transport.numero}
+                                                                </h6>
+                                                                <small className="text-muted">
+                                                                    {transport.capacite} places disponibles
+                                                                </small>
+                                                            </div>
+                                                            <Badge bg="secondary">
+                                                                {transport.compagnie?.nom}
+                                                            </Badge>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         )}
-                                    </div>
-                                </div>
-                                <button className="btn" style={{ background: "#0984e3", color: "#fff", fontWeight: 700, fontSize: 16 }}>
-                                    Modifier mes informations
-                                </button>
-                            </div>
-                            <div className="mt-5">
-                                <h2 style={{ color: "#00cec9", fontSize: 22, marginBottom: 18, fontWeight: 600 }}>
-                                    Vos transports
-                                </h2>
-                                <ul>
-                                    {filteredTransports.map((t) => (
-                                        <li key={t.id}>
-                                            {t.type} → {t.numero} → {t.capacite} Places
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
+                                    </Card.Body>
+                                </Card>
+                            </Col>
+                        </Row>
                     </Col>
                 </Row>
             </Container>
+
+            {/* Styles CSS */}
+            <style>
+                {`
+                    .hover-card:hover {
+                        transform: translateY(-5px);
+                        transition: all 0.3s ease;
+                        box-shadow: 0 8px 25px rgba(0, 255, 255, 0.15) !important;
+                    }
+                    .hover-row:hover {
+                        background-color: rgba(255, 255, 255, 0.05) !important;
+                        transition: background-color 0.2s ease;
+                    }
+                    .bg-purple {
+                        background-color: #6f42c1 !important;
+                    }
+                    .table > :not(caption) > * > * {
+                        background-color: transparent;
+                    }
+                `}
+            </style>
         </div>
     );
 }
