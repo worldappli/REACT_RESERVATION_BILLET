@@ -116,6 +116,12 @@ function LoginPage() {
                   Inscrivez-vous
                 </a>
               </p>
+              <p className="text-center mt-3">
+                Vous êtes une compagnie ?{" "}
+                <a href="/compagnie-login" className="text-decoration-none">
+                  Inscrivez votre compagnie
+                </a>
+              </p>
             </Card.Body>
           </Card>
 
