@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -14,6 +15,16 @@ const Navbar = () => {
   // Fonction pour vérifier si un onglet est actif
   const isActive = (path) => {
     return location.pathname === path;
+  };
+
+  // Fonction pour toggle le menu mobile
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  // Fonction pour fermer le menu après clic sur un lien
+  const closeMenu = () => {
+    setIsMenuOpen(false);
   };
 
   // Récupérer les informations utilisateur pour l'affichage
@@ -42,20 +53,19 @@ const Navbar = () => {
         <button
           className="navbar-toggler border-0"
           type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-          aria-controls="navbarNav"
-          aria-expanded="false"
+          onClick={toggleMenu}
+          aria-expanded={isMenuOpen}
           aria-label="Toggle navigation"
           style={{
-            boxShadow: 'none !important'
+            boxShadow: 'none !important',
+            border: '1px solid rgba(13, 202, 240, 0.3)'
           }}
         >
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        {/* Menu de navigation */}
-        <div className="collapse navbar-collapse" id="navbarNav">
+        {/* Menu de navigation avec contrôle manuel */}
+        <div className={`collapse navbar-collapse ${isMenuOpen ? 'show' : ''}`} id="navbarNav">
           <ul className="navbar-nav ms-auto align-items-center">
             {/* Accueil */}
             <li className="nav-item mx-1">
@@ -66,6 +76,7 @@ const Navbar = () => {
                     : "text-light-emphasis"
                 }`}
                 to="/"
+                onClick={closeMenu}
                 style={{
                   transition: 'all 0.3s ease',
                   background: isActive("/") 
@@ -101,6 +112,7 @@ const Navbar = () => {
                     : "text-light-emphasis"
                 }`}
                 to="/mes-reservations"
+                onClick={closeMenu}
                 style={{
                   transition: 'all 0.3s ease',
                   background: isActive("/mes-reservations") 
@@ -136,6 +148,7 @@ const Navbar = () => {
                     : "text-light-emphasis"
                 }`}
                 to="/mes-billets"
+                onClick={closeMenu}
                 style={{
                   transition: 'all 0.3s ease',
                   background: isActive("/mes-billets") 
@@ -171,6 +184,7 @@ const Navbar = () => {
                     : "text-light-emphasis"
                 }`}
                 to="/profil"
+                onClick={closeMenu}
                 style={{
                   transition: 'all 0.3s ease',
                   background: isActive("/profil") 
@@ -197,9 +211,9 @@ const Navbar = () => {
               </Link>
             </li>
 
-            {/* Badge utilisateur */}
+            {/* Badge utilisateur - visible seulement sur desktop */}
             {/* {userInfo && userInfo.prenom && (
-              <li className="nav-item mx-2">
+              <li className="nav-item mx-2 d-none d-lg-block">
                 <div className="d-flex align-items-center text-light bg-dark rounded-pill px-3 py-1">
                   <i className="fas fa-user-circle me-2 text-info"></i>
                   <small className="fw-semibold">
@@ -213,7 +227,10 @@ const Navbar = () => {
             <li className="nav-item ms-2">
               <button
                 className="btn btn-outline-light btn-sm rounded-pill px-3 fw-semibold"
-                onClick={handleLogout}
+                onClick={() => {
+                  closeMenu();
+                  handleLogout();
+                }}
                 style={{
                   transition: 'all 0.3s ease',
                   borderColor: '#ff6b6b',
@@ -257,8 +274,9 @@ const Navbar = () => {
 
           @media (max-width: 991.98px) {
             .navbar-nav .nav-link {
-              margin: 0.25rem 0;
+              margin: 0.5rem 0;
               text-align: center;
+              justify-content: center;
             }
             
             .navbar-collapse {
@@ -267,6 +285,24 @@ const Navbar = () => {
               margin-top: 1rem;
               padding: 1rem;
               border: 1px solid rgba(13, 202, 240, 0.2);
+              box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            }
+
+            .navbar-nav {
+              align-items: center !important;
+            }
+
+            .nav-item {
+              width: 100%;
+              display: flex;
+              justify-content: center;
+            }
+
+            .nav-link {
+              width: 90%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
             }
           }
 
@@ -279,6 +315,11 @@ const Navbar = () => {
 
           .position-absolute.bg-warning {
             animation: pulse 2s infinite;
+          }
+
+          /* Transition pour l'ouverture/fermeture du menu */
+          .navbar-collapse {
+            transition: all 0.3s ease-in-out;
           }
         `}
       </style>
