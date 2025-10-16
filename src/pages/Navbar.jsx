@@ -27,6 +27,8 @@ const Navbar = () => {
     setIsMenuOpen(false);
   };
 
+  //test..........
+
   // Récupérer les informations utilisateur pour l'affichage
   const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
 
