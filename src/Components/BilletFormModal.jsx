@@ -35,7 +35,7 @@ function BilletFormModal({ show, handleClose, handleSave, listTransport, listGar
         <Modal show={show} onHide={handleClose} centered>
             <Form onSubmit={onSubmit} style={{ background: "#232526", borderRadius: 12 }}>
                 <Modal.Header closeButton style={{ borderBottom: "none", background: "#232526" }}>
-                    <Modal.Title style={{ color: "#00b894", fontWeight: 700 }}>Publier un nouveau billet</Modal.Title>
+                    <Modal.Title style={{ color: "#00b894", fontWeight: 700 }}>Creer un trajet</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form.Group className="mb-3">

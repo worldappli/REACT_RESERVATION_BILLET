@@ -24,7 +24,7 @@ function HoraireFormModal({ show, handleClose, handleSave, trajets }) {
     return (
         <Modal show={show} onHide={handleClose} centered>
             <Modal.Header closeButton style={{ background: "#232526", color: "#fff" }}>
-                <Modal.Title>Ajouter un horaire</Modal.Title>
+                <Modal.Title>Publier un Billet</Modal.Title>
             </Modal.Header>
             <Form onSubmit={onSubmit} style={{ background: "#232526", color: "#fff" }}>
                 <Modal.Body>

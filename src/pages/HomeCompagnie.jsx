@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import BilletFormModal from "./BilletFormModal";
+import BilletFormModal from "../Components/BilletFormModal";
 import api from "../services/api";
 import { Modal, Button, Form, Container, Row, Col, Card, Badge } from "react-bootstrap";
-import HoraireFormModal from "./HoraireFormModal";
+import HoraireFormModal from "../Components/HoraireFormModal";
 import { useNavigate } from "react-router-dom";
+import TransportFormModal from "../Components/TransportFormModal";
+import GareFormModal from "../Components/GareFormModal";
 
 export default function HomeCompagnie() {
     const navigate = useNavigate();
@@ -16,6 +18,12 @@ export default function HomeCompagnie() {
     const [trajets, setTrajets] = useState([]);
     const [horaires, setHoraires] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showTransportModal, setShowTransportModal] = useState(false);
+    const handleOpenTransportModal = () => setShowTransportModal(true);
+    const handleCloseTransportModal = () => setShowTransportModal(false);
+    const [showGareModal, setShowGareModal] = useState(false);
+    const handleOpenGareModal = () => setShowGareModal(true);
+    const handleCloseGareModal = () => setShowGareModal(false);
 
     const monnaie = new Intl.NumberFormat('fr-FR', {
         style: 'currency',
@@ -34,32 +42,54 @@ export default function HomeCompagnie() {
     }, [navigate]);
 
     // Récupération des données
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const token = localStorage.getItem("token");
-                const headers = { Authorization: `Bearer ${token}` };
-
-                const [transportsRes, garesRes, trajetsRes, horairesRes] = await Promise.all([
-                    api.get("/transport", { headers }),
-                    api.get("/gare", { headers }),
-                    api.get("/trajet", { headers }),
-                    api.get("/horaire", { headers })
-                ]);
-
-                setTransports(transportsRes.data);
-                setGare(garesRes.data);
-                setTrajets(trajetsRes.data);
-                setHoraires(horairesRes.data);
-            } catch (error) {
-                console.error("Erreur lors de la récupération des données", error);
-            } finally {
-                setLoading(false);
+    // Récupération des données
+useEffect(() => {
+    const fetchData = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            
+            // Vérifier si le token existe
+            if (!token) {
+                console.error("Aucun token trouvé");
+                navigate("/compagnie-login");
+                return;
             }
-        };
 
-        fetchData();
-    }, []);
+            const headers = { 
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+
+            console.log("Token utilisé:", token); // Pour debug
+
+            const [transportsRes, garesRes, trajetsRes, horairesRes] = await Promise.all([
+                api.get("/transport", { headers }),
+                api.get("/gare", { headers }),
+                api.get("/trajet", { headers }),
+                api.get("/horaire", { headers })
+            ]);
+
+            setTransports(transportsRes.data);
+            setGare(garesRes.data);
+            setTrajets(trajetsRes.data);
+            setHoraires(horairesRes.data);
+            
+        } catch (error) {
+            console.error("Erreur détaillée:", error.response?.data || error.message);
+            
+            // Si erreur 401, déconnecter l'utilisateur
+            if (error.response?.status === 401) {
+                localStorage.removeItem("token");
+                localStorage.removeItem("userInfo");
+                navigate("/compagnie-login");
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    fetchData();
+}, [navigate]);
 
     // Filtrage des données selon userInfo.id
     const filteredTransports = userInfo
@@ -120,6 +150,81 @@ export default function HomeCompagnie() {
             });
         setShowHoraireModal(false);
     };
+
+    // fonction pour enregistrer un Transport
+    const handleSaveTransport = (data) => {
+    const token = localStorage.getItem("token");
+    
+    // Vérifier le token
+    if (!token) {
+        alert("Session expirée, veuillez vous reconnecter");
+        navigate("/compagnie-login");
+        return;
+    }
+
+    console.log("Données envoyées:", data); // Pour debug
+
+    api.post("/transport", data, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+    })
+    .then((response) => {
+        setTransports((prevTransports) => [...prevTransports, response.data]);
+        alert("Transport créé avec succès !");
+    })
+    .catch((error) => {
+        console.error("Erreur détaillée création transport:", error.response?.data || error.message);
+        
+        if (error.response?.status === 401) {
+            alert("Session expirée, veuillez vous reconnecter");
+            localStorage.removeItem("token");
+            localStorage.removeItem("userInfo");
+            navigate("/compagnie-login");
+        } else {
+            alert("Erreur lors de la création du transport: " + (error.response?.data?.message || error.message));
+        }
+    });
+    
+    setShowTransportModal(false);
+};
+
+// fonction pour enregistrer une Gare
+const handleSaveGare = (data) => {
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+        alert("Session expirée, veuillez vous reconnecter");
+        navigate("/compagnie-login");
+        return;
+    }
+
+    api.post("/gare", data, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+    })
+    .then((response) => {
+        setGare((prevGares) => [...prevGares, response.data]);
+        alert("Gare créée avec succès !");
+    })
+    .catch((error) => {
+        console.error("Erreur création gare:", error.response?.data || error.message);
+        
+        if (error.response?.status === 401) {
+            alert("Session expirée, veuillez vous reconnecter");
+            localStorage.removeItem("token");
+            localStorage.removeItem("userInfo");
+            navigate("/compagnie-login");
+        } else {
+            alert("Erreur lors de la création de la gare: " + (error.response?.data?.message || error.message));
+        }
+    });
+    
+    setShowGareModal(false);
+};
 
     if (loading) {
         return (
@@ -212,6 +317,20 @@ export default function HomeCompagnie() {
                 trajets={filteredTrajets}
             />
 
+            {/* Modal formulaire transport */}
+            <TransportFormModal
+                show={showTransportModal}
+                handleClose={handleCloseTransportModal}
+                handleSave={handleSaveTransport}
+                compagnieId={userInfo?.id} // Passe l'ID de la compagnie connectée
+            />
+
+<GareFormModal
+    show={showGareModal}
+    handleClose={handleCloseGareModal}
+    handleSave={handleSaveGare}
+    compagnieId={userInfo?.id}
+/>
             <Container className="py-5">
                 {/* En-tête */}
                 <Row className="justify-content-center mb-5">
@@ -292,10 +411,10 @@ export default function HomeCompagnie() {
                                 <Row className="g-4">
                                     <Col md={6}>
                                         <Button
-                                            variant="info"
+                                            variant="warning"
                                             size="lg"
                                             className="w-100 fw-bold py-3 fs-5"
-                                            onClick={handleOpenHoraireModal}
+                                            onClick={handleOpenHoraireModal }
                                         >
                                             <i className="fas fa-plus-circle me-2"></i>
                                             Publier un Billet
@@ -303,13 +422,38 @@ export default function HomeCompagnie() {
                                     </Col>
                                     <Col md={6}>
                                         <Button
-                                            variant="warning"
+                                            variant="success"
                                             size="lg"
                                             className="w-100 fw-bold py-3 fs-5"
                                             onClick={handleOpenModal}
                                         >
                                             <i className="fas fa-route me-2"></i>
                                             Créer un Trajet
+                                        </Button>
+                                    </Col>
+                                </Row>
+
+                                <Row className="g-4 mt-3">
+                                    <Col md={6}>
+                                        <Button
+                                            variant="info"
+                                            size="lg"
+                                            className="w-100 fw-bold py-3 fs-5"
+                                            onClick={handleOpenGareModal}
+                                        >
+                                            <i className="fas fa-plus-circle me-2"></i>
+                                            enregistrer une gare
+                                        </Button>
+                                    </Col>
+                                    <Col md={6}>
+                                        <Button
+                                            variant="primary"
+                                            size="lg"
+                                            className="w-100 fw-bold py-3 fs-5"
+                                            onClick={handleOpenTransportModal}
+                                        >
+                                            <i className="fas fa-route me-2"></i>
+                                            enregistrer un transport
                                         </Button>
                                     </Col>
                                 </Row>

@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import api from "../services/api";
 import monnaie from "../services/variable";
 import QRCode from "react-qr-code";
-import Navbar from "./Navbar";
+import Navbar from "../Components/Navbar";
 import { useNavigate } from "react-router-dom";
 
 

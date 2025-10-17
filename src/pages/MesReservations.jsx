@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
-import Navbar from './Navbar';
+import Navbar from '../Components/Navbar';
 import api from '../services/api';
 import monnaie from '../services/variable';
 

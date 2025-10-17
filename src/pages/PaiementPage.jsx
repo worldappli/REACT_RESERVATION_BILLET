@@ -1,7 +1,7 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaCcVisa, FaCcMastercard, FaPaypal, FaMobileAlt, FaMoneyBillWave, FaMoneyCheckAlt, FaUser, FaCreditCard } from "react-icons/fa";
-import Navbar from "./Navbar";
+import Navbar from "../Components/Navbar";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../services/api";
 import monnaie from "../services/variable";

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import jwtDecode from 'jwt-decode';
-import Navbar from './Navbar';
+import Navbar from '../Components/Navbar';
 import { Container, Row, Col, Modal, Button, Card, Badge } from "react-bootstrap";
 
 const HomePage = () => {

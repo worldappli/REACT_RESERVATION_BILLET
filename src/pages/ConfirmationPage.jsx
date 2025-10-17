@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button, Container, Row, Col, Modal, Card, Badge } from "react-bootstrap";
-import Navbar from "./Navbar";
+import Navbar from "../Components/Navbar";
 
 export default function ConfirmationPage() {
     const location = useLocation();
