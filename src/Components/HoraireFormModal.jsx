@@ -1,15 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Form, Button } from "react-bootstrap";
-import api from "../services/api"; // Assurez-vous que le chemin est correct
 
+function HoraireFormModal({ show, handleClose, handleSave, trajets, horaireToEdit, isEditing = false }) {
 
-// Modal pour ajouter un horaire
-function HoraireFormModal({ show, handleClose, handleSave, trajets }) {
     const [form, setForm] = useState({
         trajetId: "",
         dateDepart: "",
         dateArrivee: "",
+        placesDisponibles: ""
     });
+
+    // remplit le formulaire avec les données existantes
+    useEffect(() => {
+        if (isEditing && horaireToEdit) {
+            setForm({
+                trajetId: horaireToEdit.trajetId || "",
+                dateDepart: horaireToEdit.dateDepart ? 
+                    new Date(horaireToEdit.dateDepart).toISOString().slice(0, 16) : "",
+                dateArrivee: horaireToEdit.dateArrivee ? 
+                    new Date(horaireToEdit.dateArrivee).toISOString().slice(0, 16) : "",
+                placesDisponibles: horaireToEdit.placesDisponibles || ""
+            });
+        } else {
+            // Réinitialise le formulaire pour une nouvelle création
+            setForm({
+                trajetId: "",
+                dateDepart: "",
+                dateArrivee: "",
+                placesDisponibles: ""
+            });
+        }
+    }, [horaireToEdit, isEditing, show]); //Déclenché à chaque ouverture
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -18,36 +39,39 @@ function HoraireFormModal({ show, handleClose, handleSave, trajets }) {
     const onSubmit = (e) => {
         e.preventDefault();
         handleSave(form);
-        setForm({ trajet_id: "", date_depart: "", date_arrivee: "" });
     };
 
     return (
         <Modal show={show} onHide={handleClose} centered>
-            <Modal.Header closeButton style={{ background: "#232526", color: "#fff" }}>
-                <Modal.Title>Publier un Billet</Modal.Title>
-            </Modal.Header>
-            <Form onSubmit={onSubmit} style={{ background: "#232526", color: "#fff" }}>
+            <Form onSubmit={onSubmit} style={{ background: "#232526", borderRadius: 12 }}>
+                <Modal.Header closeButton style={{ borderBottom: "none", background: "#232526" }}>
+                    <Modal.Title style={{ color: "#00b894", fontWeight: 700 }}>
+                        {isEditing ? "Modifier le billet" : "Publier un nouveau billet"}
+                    </Modal.Title>
+                </Modal.Header>
                 <Modal.Body>
                     <Form.Group className="mb-3">
-                        <Form.Label>Trajet</Form.Label>
-                        <Form.Select
+                        <Form.Label style={{ color: "#fff" }}>Trajet</Form.Label>
+                        <Form.Control
+                            as="select"
                             name="trajetId"
                             value={form.trajetId}
                             onChange={handleChange}
                             required
                             style={{ background: "#181920", color: "#fff", border: "1px solid #636e72" }}
                         >
-                            <option value="">Sélectionner un trajet</option>
-                            {trajets.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                    {t.transport.type} : {t.transport.numero} - 
-                                     {t.gare_depart.ville} ({t.gare_depart.nom}) → {t.gare_arrivee.ville} ({t.gare_arrivee.nom})
+                            <option value="">Sélectionnez un trajet</option>
+                            {trajets.map((trajet) => (
+                                <option key={trajet.id} value={trajet.id}>
+                                    {trajet.gare_depart.nom} → {trajet.gare_arrivee.nom} 
+                                    ({trajet.transport.type} n°{trajet.transport.numero})
                                 </option>
                             ))}
-                        </Form.Select>
+                        </Form.Control>
                     </Form.Group>
+
                     <Form.Group className="mb-3">
-                        <Form.Label>Date de départ</Form.Label>
+                        <Form.Label style={{ color: "#fff" }}>Date et heure de départ</Form.Label>
                         <Form.Control
                             type="datetime-local"
                             name="dateDepart"
@@ -57,8 +81,9 @@ function HoraireFormModal({ show, handleClose, handleSave, trajets }) {
                             style={{ background: "#181920", color: "#fff", border: "1px solid #636e72" }}
                         />
                     </Form.Group>
+
                     <Form.Group className="mb-3">
-                        <Form.Label>Date d'arrivée</Form.Label>
+                        <Form.Label style={{ color: "#fff" }}>Date et heure d'arrivée</Form.Label>
                         <Form.Control
                             type="datetime-local"
                             name="dateArrivee"
@@ -68,9 +93,22 @@ function HoraireFormModal({ show, handleClose, handleSave, trajets }) {
                             style={{ background: "#181920", color: "#fff", border: "1px solid #636e72" }}
                         />
                     </Form.Group>
+
+                    <Form.Group className="mb-3">
+                        <Form.Label style={{ color: "#fff" }}>Places disponibles</Form.Label>
+                        <Form.Control
+                            type="number"
+                            name="placesDisponibles"
+                            value={form.placesDisponibles}
+                            onChange={handleChange}
+                            required
+                            min="1"
+                            style={{ background: "#181920", color: "#fff", border: "1px solid #636e72" }}
+                        />
+                    </Form.Group>
                 </Modal.Body>
-                <Modal.Footer style={{ background: "#232526" }}>
-                    <Button variant="secondary" onClick={handleClose}>
+                <Modal.Footer style={{ borderTop: "none", background: "#232526" }}>
+                    <Button variant="secondary" onClick={handleClose} style={{ borderRadius: 8 }}>
                         Annuler
                     </Button>
                     <Button
@@ -80,9 +118,10 @@ function HoraireFormModal({ show, handleClose, handleSave, trajets }) {
                             color: "#fff",
                             fontWeight: 700,
                             border: "none",
+                            borderRadius: 8,
                         }}
                     >
-                        Enregistrer
+                        {isEditing ? "Modifier" : "Publier"}
                     </Button>
                 </Modal.Footer>
             </Form>
