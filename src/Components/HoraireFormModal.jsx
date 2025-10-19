@@ -36,7 +36,7 @@ function HoraireFormModal({ show, handleClose, handleSave, trajets, horaireToEdi
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    //juste pour push
+    
     const onSubmit = (e) => {
         e.preventDefault();
         handleSave(form);
