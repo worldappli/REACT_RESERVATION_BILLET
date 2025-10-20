@@ -3,35 +3,62 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import Navbar from "../Components/Navbar";
 import api from "../services/api";
 
-const mockUser = {
-    nom: "Dupont",
-    prenom: "Jean",
-    email: "jean.dupont@email.com",
-    telephone: "0601020304",
-};
-
 export default function Profil() {
-    const [user, setUser] = useState(mockUser);
+    const [user, setUser] = useState({
+        nom: "",
+        prenom: "",
+        email: "",
+        telephone: "",
+        adresse: "",
+        role: "Utilisateur",
+        date_inscription: "",
+        statut: "Actif"
+    });
     const [edit, setEdit] = useState(false);
-    const [form, setForm] = useState(user);
-    const [userInfo, setUserInfo] = useState(user);
+    const [form, setForm] = useState({ ...user });
+    const [userInfo, setUserInfo] = useState(null);
     const [loading, setLoading] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
 
+    // Initialisation depuis le localStorage
     useEffect(() => {
         const storedUserInfo = localStorage.getItem("userInfo");
         if (storedUserInfo) {
-            setUserInfo(JSON.parse(storedUserInfo));
+            try {
+                const parsedUserInfo = JSON.parse(storedUserInfo);
+                setUserInfo(parsedUserInfo);
+                
+                // Initialiser le form avec les données du localStorage
+                const initialForm = {
+                    nom: parsedUserInfo.nom || "",
+                    prenom: parsedUserInfo.prenom || "",
+                    email: parsedUserInfo.email || "",
+                    telephone: parsedUserInfo.telephone || "",
+                    adresse: parsedUserInfo.adresse || "",
+                    role: parsedUserInfo.role || "Utilisateur",
+                    date_inscription: parsedUserInfo.date_inscription || "",
+                    statut: parsedUserInfo.statut || "Actif",
+                    mot_de_passe: ""
+                };
+                
+                setUser(initialForm);
+                setForm(initialForm);
+            } catch (error) {
+                console.error("Erreur parsing userInfo:", error);
+            }
         }
     }, []);
     
-    const userId = userInfo && userInfo.id ? userInfo.id : null;
+    const userId = userInfo?.id;
 
     // Récupère un utilisateur via l'API
     useEffect(() => {
         const fetchUser = async () => {
             if (!userId) return;
+            
             const token = localStorage.getItem("token");
+            if (!token) return;
+            
             setLoading(true);
             try {
                 const response = await api.get(`/utilisateur/${userId}`, {
@@ -39,26 +66,49 @@ export default function Profil() {
                         Authorization: `Bearer ${token}`,
                     },
                 });
-                setUser(response.data);
-                setForm(response.data);
+                
+                const userData = {
+                    nom: response.data.nom || "",
+                    prenom: response.data.prenom || "",
+                    email: response.data.email || "",
+                    telephone: response.data.telephone || "",
+                    adresse: response.data.adresse || "",
+                    role: response.data.role || "Utilisateur",
+                    date_inscription: response.data.date_inscription || "",
+                    statut: response.data.statut || "Actif",
+                    mot_de_passe: ""
+                };
+                
+                setUser(userData);
+                setForm(userData);
                 console.log("Utilisateur récupéré :", response.data);
             } catch (error) {
                 console.error("Erreur lors de la récupération de l'utilisateur :", error);
+                // En cas d'erreur, on garde les données du localStorage
             } finally {
                 setLoading(false);
             }
         };
+        
         fetchUser();
     }, [userId]);
 
     const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setForm(prev => ({
+            ...prev,
+            [name]: value
+        }));
     };
 
-    const handleEdit = () => setEdit(true);
+    const handleEdit = () => {
+        setEdit(true);
+        // S'assurer que le formulaire a les dernières données
+        setForm({ ...user, mot_de_passe: "" });
+    };
 
     const handleCancel = () => {
-        setForm(user);
+        setForm({ ...user, mot_de_passe: "" });
         setEdit(false);
         setSaveSuccess(false);
     };
@@ -67,16 +117,80 @@ export default function Profil() {
         e.preventDefault();
         setLoading(true);
         
-        // Simuler un appel API
-        setTimeout(() => {
-            setUser(form);
+        try {
+            const token = localStorage.getItem("token");
+            const updateData = { ...form };
+            
+            // Ne pas envoyer le mot de passe s'il est vide
+            if (!updateData.mot_de_passe) {
+                delete updateData.mot_de_passe;
+            }
+            
+            // Appel API réel
+            if (userId && token) {
+                try {
+                    const response = await api.put(`/utilisateur/${userId}`, updateData, {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+                    
+                    // Mettre à jour les données locales
+                    const updatedUser = {
+                        ...user,
+                        nom: response.data.nom || user.nom,
+                        prenom: response.data.prenom || user.prenom,
+                        email: response.data.email || user.email,
+                        telephone: response.data.telephone || user.telephone,
+                        adresse: response.data.adresse || user.adresse
+                    };
+                    
+                    setUser(updatedUser);
+                    setForm({ ...updatedUser, mot_de_passe: "" });
+                    
+                    // Mettre à jour le localStorage
+                    const updatedUserInfo = {
+                        ...userInfo,
+                        ...updatedUser
+                    };
+                    localStorage.setItem("userInfo", JSON.stringify(updatedUserInfo));
+                    setUserInfo(updatedUserInfo);
+                    
+                } catch (apiError) {
+                    console.error("Erreur API lors de la mise à jour:", apiError);
+                    // Fallback: mise à jour locale seulement
+                    setUser(form);
+                }
+            } else {
+                // Fallback: mise à jour locale seulement
+                setUser(form);
+            }
+            
             setEdit(false);
-            setLoading(false);
             setSaveSuccess(true);
             
             // Cacher le message de succès après 3 secondes
             setTimeout(() => setSaveSuccess(false), 3000);
-        }, 1000);
+            
+        } catch (error) {
+            console.error("Erreur lors de la sauvegarde:", error);
+            alert("Erreur lors de la mise à jour du profil");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return "Non disponible";
+        try {
+            return new Date(dateString).toLocaleDateString('fr-FR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        } catch (error) {
+            return "Date invalide";
+        }
     };
 
     return (
@@ -109,7 +223,12 @@ export default function Profil() {
                                 <div>
                                     <strong>Succès !</strong> Vos informations ont été mises à jour.
                                 </div>
-                                <button type="button" className="btn-close" onClick={() => setSaveSuccess(false)}></button>
+                                <button 
+                                    type="button" 
+                                    className="btn-close" 
+                                    onClick={() => setSaveSuccess(false)}
+                                    aria-label="Fermer"
+                                ></button>
                             </div>
                         </div>
                     </div>
@@ -244,8 +363,7 @@ export default function Profil() {
                                                     <input
                                                         type="text"
                                                         className="form-control bg-dark text-muted border-dark"
-                                                        name="role"
-                                                        value={form.role || "Utilisateur"}
+                                                        value={user.role || "Utilisateur"}
                                                         disabled
                                                     />
                                                 </div>
@@ -260,8 +378,7 @@ export default function Profil() {
                                                     <input
                                                         type="text"
                                                         className="form-control bg-dark text-muted border-dark"
-                                                        name="date_inscription"
-                                                        value={form.date_inscription ? new Date(form.date_inscription).toLocaleDateString('fr-FR') : "Non disponible"}
+                                                        value={formatDate(user.date_inscription)}
                                                         disabled
                                                     />
                                                 </div>
@@ -307,45 +424,43 @@ export default function Profil() {
                                                             Modifier le profil
                                                         </button>
                                                     ) : (
-                                                        <>
-                                                            <div>
-                                                                <button 
-                                                                    type="submit" 
-                                                                    className="btn btn-success btn-lg px-4 me-3 fw-bold"
-                                                                    disabled={loading}
-                                                                >
-                                                                    {loading ? (
-                                                                        <>
-                                                                            <div className="spinner-border spinner-border-sm me-2" role="status">
-                                                                                <span className="visually-hidden">Chargement...</span>
-                                                                            </div>
-                                                                            Enregistrement...
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <i className="fas fa-save me-2"></i>
-                                                                            Enregistrer
-                                                                        </>
-                                                                    )}
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-outline-light btn-lg px-4"
-                                                                    onClick={handleCancel}
-                                                                    disabled={loading}
-                                                                >
-                                                                    <i className="fas fa-times me-2"></i>
-                                                                    Annuler
-                                                                </button>
-                                                            </div>
-                                                        </>
+                                                        <div>
+                                                            <button 
+                                                                type="submit" 
+                                                                className="btn btn-success btn-lg px-4 me-3 fw-bold"
+                                                                disabled={loading}
+                                                            >
+                                                                {loading ? (
+                                                                    <>
+                                                                        <div className="spinner-border spinner-border-sm me-2" role="status">
+                                                                            <span className="visually-hidden">Chargement...</span>
+                                                                        </div>
+                                                                        Enregistrement...
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <i className="fas fa-save me-2"></i>
+                                                                        Enregistrer
+                                                                    </>
+                                                                )}
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-outline-light btn-lg px-4"
+                                                                onClick={handleCancel}
+                                                                disabled={loading}
+                                                            >
+                                                                <i className="fas fa-times me-2"></i>
+                                                                Annuler
+                                                            </button>
+                                                        </div>
                                                     )}
                                                     
                                                     {/* Statistiques rapides */}
                                                     {!edit && (
                                                         <div className="text-end">
                                                             <small className="text-muted">
-                                                                Membre depuis {form.date_inscription ? new Date(form.date_inscription).toLocaleDateString('fr-FR') : "récemment"}
+                                                                Membre depuis {formatDate(user.date_inscription)}
                                                             </small>
                                                         </div>
                                                     )}
@@ -365,14 +480,14 @@ export default function Profil() {
                                 <div className="mb-4">
                                     <div className="bg-info rounded-circle d-inline-flex align-items-center justify-content-center"
                                          style={{ width: '120px', height: '120px' }}>
-                                        <i className="fas fa-user fa-3x text-black"></i>
+                                        <i className="fas fa-user fa-3x text-white"></i>
                                     </div>
                                 </div>
-                                <h4 className="text-white mb-2">{form.prenom} {form.nom}</h4>
-                                <p className="text-muted mb-3">{form.email}</p>
+                                <h4 className="text-white mb-2">{user.prenom} {user.nom}</h4>
+                                <p className="text-muted mb-3">{user.email}</p>
                                 <div className="badge bg-info fs-6 px-3 py-2">
                                     <i className="fas fa-star me-2"></i>
-                                    {form.role || "Utilisateur"}
+                                    {user.role || "Utilisateur"}
                                 </div>
                             </div>
                         </div>
