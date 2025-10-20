@@ -14,6 +14,7 @@ import MesBillets from "./pages/MesBillets";
 import VerifyPage from "./pages/VerifyPage";
 import RegisterCompagniePage from "./pages/RegisterCompagniePage";
 import VerifyCompagniePage from "./pages/VerifyCompagniePage";
+import CompagnieProfil from "./pages/CompagnieProfil";
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
           <Route path="/verification" element={<VerifyPage />} />
           <Route path="/register-compagnie" element={<RegisterCompagniePage />} />
           <Route path="/c/verification" element={<VerifyCompagniePage />} />
+          <Route path="/compagnie-profil" element={<CompagnieProfil />} />
         </Routes>
       </Router>
   

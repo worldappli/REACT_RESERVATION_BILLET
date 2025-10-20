@@ -402,7 +402,7 @@ export default function HomeCompagnie() {
                 </a>
               </li>
               <li className="nav-item">
-                <a className="nav-link fw-semibold" href="#">
+                <a className="nav-link fw-semibold" href="/compagnie-profil">
                   <i className="fas fa-user me-1"></i>
                   Profil
                 </a>
@@ -568,7 +568,7 @@ export default function HomeCompagnie() {
               </Card.Header>
               <Card.Body className="p-4">
                 <Row className="g-4">
-                  <Col md={4}>
+                  <Col md={6}>
                     <Button
                       variant="warning"
                       size="lg"
@@ -579,7 +579,7 @@ export default function HomeCompagnie() {
                       Publier un Billet
                     </Button>
                   </Col>
-                  <Col md={4}>
+                  <Col md={6}>
                     <Button
                       variant="success"
                       size="lg"
@@ -590,7 +590,7 @@ export default function HomeCompagnie() {
                       Créer un Trajet
                     </Button>
                   </Col>
-                  <Col md={4}>
+                  {/* <Col md={4}>
                     <Button
                       variant="primary"
                       size="lg"
@@ -600,7 +600,7 @@ export default function HomeCompagnie() {
                       <i className="fas fa-ticket-alt me-2"></i>
                       Enregistrer Billet
                     </Button>
-                  </Col>
+                  </Col> */}
                 </Row>
 
                 <Row className="g-4 mt-3">
@@ -799,7 +799,7 @@ export default function HomeCompagnie() {
                       </Badge>
                     </div>
 
-                    <Button variant="outline-info" className="w-100">
+                    <Button variant="outline-info" className="w-100" href="/compagnie-profil">
                       <i className="fas fa-edit me-2"></i>
                       Modifier les informations
                     </Button>
