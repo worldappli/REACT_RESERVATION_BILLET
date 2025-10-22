@@ -161,6 +161,16 @@ const HomePage = () => {
                     <p className="mb-0 fw-bold">{selectedTrajet.duree} minutes</p>
                   </div>
                 </div>
+
+                <div className="d-flex align-items-center mb-3">
+                  <div className="bg-purple rounded p-2 me-3">
+                    <i className="fas fa-clock text-white"></i>
+                  </div>
+                  <div>
+                    <small className="text-muted">Nombre de place disponible</small>
+                    <p className="mb-0 fw-bold">{selectedHoraire.nombre_place ? selectedHoraire.nombre_place : "Pas de nombre de place spécifié"} places</p>
+                  </div>
+                </div>
               </div>
 
               {selectedTrajet.arret && (

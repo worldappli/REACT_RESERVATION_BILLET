@@ -7,7 +7,7 @@ function HoraireFormModal({ show, handleClose, handleSave, trajets, horaireToEdi
         trajetId: "",
         dateDepart: "",
         dateArrivee: "",
-        placesDisponibles: ""
+        nombre_place: ""
     });
 
     // remplit le formulaire avec les données existantes
@@ -19,7 +19,7 @@ function HoraireFormModal({ show, handleClose, handleSave, trajets, horaireToEdi
                     new Date(horaireToEdit.dateDepart).toISOString().slice(0, 16) : "",
                 dateArrivee: horaireToEdit.dateArrivee ? 
                     new Date(horaireToEdit.dateArrivee).toISOString().slice(0, 16) : "",
-                placesDisponibles: horaireToEdit.placesDisponibles || ""
+                nombre_place: horaireToEdit.nombre_place || ""
             });
         } else {
             // Réinitialise le formulaire pour une nouvelle création
@@ -27,7 +27,7 @@ function HoraireFormModal({ show, handleClose, handleSave, trajets, horaireToEdi
                 trajetId: "",
                 dateDepart: "",
                 dateArrivee: "",
-                placesDisponibles: ""
+                nombre_place: ""
             });
         }
     }, [horaireToEdit, isEditing, show]); //Déclenché à chaque ouverture
@@ -99,8 +99,8 @@ function HoraireFormModal({ show, handleClose, handleSave, trajets, horaireToEdi
                         <Form.Label style={{ color: "#fff" }}>Places disponibles</Form.Label>
                         <Form.Control
                             type="number"
-                            name="placesDisponibles"
-                            value={form.placesDisponibles}
+                            name="nombre_place"
+                            value={form.nombre_place}
                             onChange={handleChange}
                             required
                             min="1"
